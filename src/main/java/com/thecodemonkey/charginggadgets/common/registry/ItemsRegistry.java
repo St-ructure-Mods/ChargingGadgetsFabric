@@ -1,9 +1,9 @@
-package com.thecodemonkey.buildinggadgets.common.registry;
+package com.thecodemonkey.charginggadgets.common.registry;
 
 import java.util.ArrayList;
 
-import com.thecodemonkey.buildinggadgets.BuildingGadgets;
-import com.thecodemonkey.buildinggadgets.common.tab.CreativeTab;
+import com.thecodemonkey.charginggadgets.ChargingGadgets;
+import com.thecodemonkey.charginggadgets.common.tab.CreativeTab;
 
 import net.minecraft.item.BlockItem;
 import net.minecraft.item.Item;
@@ -18,7 +18,7 @@ public class ItemsRegistry {
 
     public static Item registerItem(String name, Item item)
     {
-        Registry.register(Registry.ITEM, new Identifier(BuildingGadgets.MOD_ID, name), item);
+        Registry.register(Registry.ITEM, new Identifier(ChargingGadgets.MOD_ID, name), item);
         if (item instanceof BlockItem)
             MOD_BLOCKS.add(item);
         else

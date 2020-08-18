@@ -1,7 +1,7 @@
-package com.thecodemonkey.buildinggadgets.common.tab;
+package com.thecodemonkey.charginggadgets.common.tab;
 
-import com.thecodemonkey.buildinggadgets.BuildingGadgets;
-import com.thecodemonkey.buildinggadgets.common.registry.ItemsRegistry;
+import com.thecodemonkey.charginggadgets.ChargingGadgets;
+import com.thecodemonkey.charginggadgets.common.registry.ItemsRegistry;
 
 import net.fabricmc.fabric.api.client.itemgroup.FabricItemGroupBuilder;
 import net.minecraft.item.Item;
@@ -11,7 +11,7 @@ import net.minecraft.util.Identifier;
 
 public class CreativeTab {
     public static final ItemGroup TAB = FabricItemGroupBuilder.create(
-        new Identifier(BuildingGadgets.MOD_ID, "items"))
+        new Identifier(ChargingGadgets.MOD_ID, "items"))
         // .icon()
         .appendItems(stacks -> {
             for (Item i: ItemsRegistry.MOD_BLOCKS) {

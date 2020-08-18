@@ -1,10 +1,10 @@
 {
   "schemaVersion": 1,
-  "id": "buildingGadgets",
+  "id": "charginggadgets",
   "version": "${version}",
 
-  "name": "Building Gadgets",
-  "description": "A fabric port of direwolfs building gadgets",
+  "name": "Charging Gadgets",
+  "description": "A fabric port of direwolfs charging gadgets",
   "authors": [
     "Me!"
   ],
@@ -14,12 +14,12 @@
   },
 
   "license": "CC0-1.0",
-  "icon": "assets/modid/icon.png",
+  "icon": "assets/charginggadgets/icon.png",
 
   "environment": "*",
   "entrypoints": {
     "main": [
-      "net.the-code-monkey.buildinggadgets"
+      "net.the-code-monkey.charginggadgets"
     ]
   },
   "depends": {
