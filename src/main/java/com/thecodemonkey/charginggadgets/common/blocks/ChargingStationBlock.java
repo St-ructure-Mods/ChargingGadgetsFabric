@@ -1,12 +1,11 @@
 package com.thecodemonkey.charginggadgets.common.blocks;
 
+import com.thecodemonkey.charginggadgets.common.items.ChargingStationItem;
+import com.thecodemonkey.charginggadgets.common.tiles.ChargingStationTile;
 import jdk.internal.jline.internal.Nullable;
 import net.fabricmc.fabric.api.object.builder.v1.block.FabricBlockSettings;
 import net.fabricmc.fabric.api.tool.attribute.v1.FabricToolTags;
-import net.minecraft.block.Block;
-import net.minecraft.block.BlockState;
-import net.minecraft.block.HorizontalFacingBlock;
-import net.minecraft.block.Material;
+import net.minecraft.block.*;
 import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.ItemPlacementContext;
@@ -21,11 +20,12 @@ import net.minecraft.util.ItemScatterer;
 import net.minecraft.util.hit.BlockHitResult;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
+import net.minecraft.world.BlockView;
 import net.minecraft.world.World;
 
 import java.util.List;
 
-public class ChargingStationBlock extends Block {
+public class ChargingStationBlock extends Block implements BlockEntityProvider {
     public static final DirectionProperty FACING = HorizontalFacingBlock.FACING;
 
     public ChargingStationBlock() {
@@ -75,17 +75,22 @@ public class ChargingStationBlock extends Block {
         }
     }
 
-    @Override
-    public ActionResult onUse(BlockState state, World world, BlockPos pos, PlayerEntity player, Hand hand, BlockHitResult hit) {
-        if (world.isClient())
-            return ActionResult.SUCCESS;
-        else {
-            BlockEntity be = world.getBlockEntity(pos);
-            if (be instanceof ChargingStationTile) {
-                player.openHandledScreen((ChargingStationTile) be);
-            }
+//    @Override
+//    public ActionResult onUse(BlockState state, World world, BlockPos pos, PlayerEntity player, Hand hand, BlockHitResult hit) {
+//        if (world.isClient())
+//            return ActionResult.SUCCESS;
+//        else {
+//            BlockEntity be = world.getBlockEntity(pos);
+//            if (be instanceof ChargingStationTile) {
+//                player.openHandledScreen((ChargingStationTile) be);
+//            }
+//
+//            return ActionResult.CONSUME;
+//        }
+//    }
 
-            return ActionResult.CONSUME;
-        }
+    @Override
+    public BlockEntity createBlockEntity(BlockView blockView) {
+        return new ChargingStationTile();
     }
 }
