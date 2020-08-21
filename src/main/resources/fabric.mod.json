@@ -19,13 +19,14 @@
   "environment": "*",
   "entrypoints": {
     "main": [
-      "net.the-code-monkey.charginggadgets"
+      "charginggadgets.ChargingGadgets"
     ]
   },
   "depends": {
     "fabricloader": ">=0.7.4",
     "fabric": "*",
-    "minecraft": "1.16.x"
+    "reborncore": "*",
+    "team_reborn_energy": ">=0.1.0"
   },
   "suggests": {
     "flamingo": "*"
