@@ -2,6 +2,7 @@ package charginggadgets;
 
 import charginggadgets.config.CGConfig;
 import charginggadgets.init.CGContent;
+import charginggadgets.events.ModRegistry;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.client.itemgroup.FabricItemGroupBuilder;
 import net.minecraft.item.ItemGroup;
@@ -26,7 +27,6 @@ public class ChargingGadgets implements ModInitializer {
         INSTANCE = this;
         new Configuration(CGConfig.class, "charging_gadgets");
 
-
-
+        ModRegistry.setup();
     }
 }
