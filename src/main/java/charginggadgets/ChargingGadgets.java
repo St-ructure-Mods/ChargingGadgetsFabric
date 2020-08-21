@@ -12,7 +12,7 @@ import org.apache.logging.log4j.Logger;
 import reborncore.common.config.Configuration;
 
 public class ChargingGadgets implements ModInitializer {
-	public final static String MOD_ID = "charging_gadgets";
+	public final static String MOD_ID = "charginggadgets";
     public static final Logger LOGGER = LogManager.getLogger(MOD_ID);
     public static ChargingGadgets INSTANCE;
 
