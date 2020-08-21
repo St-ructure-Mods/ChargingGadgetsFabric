@@ -20,15 +20,59 @@ import reborncore.common.util.RebornInventory;
 import team.reborn.energy.Energy;
 
 public class ChargingStationBlockEntity extends PowerAcceptorBlockEntity implements IToolDrop, InventoryProvider, BuiltScreenHandlerProvider {
+    public enum Slots {
+        FUEL(0),
+        CHARGE(1);
+
+        int id;
+
+        Slots(int number) {
+            id = number;
+        }
+
+        public int getId() {
+            return id;
+        }
+    }
+
     private final int inventorySize = 1;
 
     public RebornInventory<ChargingStationBlockEntity> inventory = new RebornInventory<>(inventorySize, "ChargingStationBlockEntity", 64, this);
 
-    public final IIntArray data;
+    private int counter = 0;
+    private int maxBurn = 0;
 
-    public ChargingStationBlockEntity(IIntArray data) {
+    public final IIntArray data = new IIntArray() {
+        @Override
+        public int get(int index) {
+          //  switch (index) {
+           //     case 0:
+             //       return ChargingStationBlockEntity.this.energyStorage.getEnergyStored() / 32;
+            //    case 1:
+             //       return ChargingStationBlockEntity.this.energyStorage.getMaxEnergyStored() / 32;
+            //    case 2:
+              //      return ChargingStationBlockEntity.this.counter;
+          //      case 3:
+             //       return ChargingStationBlockEntity.this.maxBurn;
+            //    default:
+               //     throw new IllegalArgumentException("Invalid index: " + index);
+              return 2;
+            }
+        }
+
+        @Override
+        public void set(int index, int value) {
+            throw new IllegalStateException("Cannot set values through IIntArray");
+        }
+
+        @Override
+        public int size() {
+            return 4;
+        }
+    };
+
+    public ChargingStationBlockEntity() {
         super(CGBlockEntities.CHARGING_STATION);
-        this.data = data;
     }
 
     // TilePowerAcceptor
