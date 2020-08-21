@@ -1,7 +1,7 @@
 package charginggadgets.events;
 
 import charginggadgets.ChargingGadgets;
-import chargingadgets.init.CGContent.*;
+import charginggadgets.init.CGContent.*;
 import net.minecraft.item.Item;
 import reborncore.RebornRegistry;
 
