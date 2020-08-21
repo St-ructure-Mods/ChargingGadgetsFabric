@@ -56,8 +56,8 @@ public class ChargingStationBlockEntity extends PowerAcceptorBlockEntity impleme
              //       return ChargingStationBlockEntity.this.maxBurn;
             //    default:
                //     throw new IllegalArgumentException("Invalid index: " + index);
+              // }
               return 2;
-            }
         }
 
         @Override
