@@ -23,7 +23,7 @@ import reborncore.common.util.RebornInventory;
 import java.util.Map;
 
 public class ChargingStationBlockEntity extends PowerAcceptorBlockEntity implements IToolDrop, InventoryProvider, BuiltScreenHandlerProvider {
-    private final int inventorySize = 2;
+    private final int inventorySize = 3;
     public RebornInventory<ChargingStationBlockEntity> inventory = new RebornInventory<>(inventorySize, "ChargingStationBlockEntity", 64, this);
     public int fuelSlot = 0;
     public int burnTime;
@@ -157,10 +157,12 @@ public class ChargingStationBlockEntity extends PowerAcceptorBlockEntity impleme
         return new ScreenHandlerBuilder("chargingstation")
                 .player(player.inventory).inventory().hotbar().addInventory()
                 .blockEntity(this)
-//                .energySlot(2, 7, 72)
                 .fuelSlot(0, 65, 43)
                 .slot(1, 119, 43)
+                .energySlot(2, 7, 72)
                 .syncEnergyValue()
+                .sync(this::getBurnTime, this::setBurnTime)
+                .sync(this::getTotalBurnTime, this::setTotalBurnTime)
                 .addInventory().create(this, syncID);
     }
 
