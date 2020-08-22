@@ -67,7 +67,7 @@ public class ChargingStationBlockEntity extends PowerAcceptorBlockEntity impleme
 
         if (burnTime == 0) {
             updateState();
-            burnTime = totalBurnTime = ChargingStationBlockEntity.getItemBurnTime(inventory.getStack(fuelSlot));
+            burnTime = totalBurnTime = ChargingStationBlockEntity.getItemBurnTime(inventory.getStack(fuelSlot)) / 32;
             if (burnTime > 0) {
                 updateState();
                 burnItem = inventory.getStack(fuelSlot);

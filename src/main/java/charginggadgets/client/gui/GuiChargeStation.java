@@ -30,12 +30,13 @@ public class GuiChargeStation extends GuiBase<BuiltScreenHandler> {
 
         int maxHeight = 13;
         if (this.blockEntity.totalBurnTime > 0) {
-            int remaining = (int) ((this.blockEntity.burnTime * maxHeight) / this.blockEntity.totalBurnTime);
+            int remaining = (this.blockEntity.burnTime * maxHeight) / this.blockEntity.totalBurnTime;
             drawTexture(matrixStack, getGuiLeft() + 66, getGuiTop() + 26 + 13 - remaining, 176, 13 - remaining, 14, remaining + 1);
         }
 
         int maxEnergy = (int) this.blockEntity.getMaxPower(), height = 70;
         if (maxEnergy > 0) {
+            System.out.println("HERE");
             int remaining = (int) ((this.blockEntity.getEnergy() * height) / maxEnergy);
             drawTexture(matrixStack, getGuiLeft() + 8, getGuiTop() + 78 - remaining, 176, 84 - remaining, 16, remaining + 1);
         }
@@ -46,7 +47,7 @@ public class GuiChargeStation extends GuiBase<BuiltScreenHandler> {
         super.drawForeground(matrixStack, mouseX, mouseY);
         final GuiBase.Layer layer = GuiBase.Layer.FOREGROUND;
 
-//        builder.drawBurnBar(matrixStack, this, blockEntity.getScaledBurnTime(100), 100, 50, 26, mouseX, mouseY, layer);
+//        builder.drawBurnBar(matrixStack, this, blockEntity.getScaledBurnTime(1), 100, 50, 26, mouseX, mouseY, layer);
 //        builder.drawMultiEnergyBar(matrixStack, this, 9, 19, (int) blockEntity.getEnergy(), (int) blockEntity.getMaxPower(), mouseX, mouseY, 0, layer);
     }
 }
