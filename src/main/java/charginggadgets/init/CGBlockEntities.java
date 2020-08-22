@@ -19,7 +19,7 @@ public class CGBlockEntities {
 
     private static final List<BlockEntityType<?>> TYPES = new ArrayList<>();
 
-    public static final BlockEntityType<ChargingStationBlockEntity> CHARGING_STATION = register(ChargingStationBlockEntity::new, "charge_o_mat", CGContent.Machine.CHARGING_STATION);
+    public static final BlockEntityType<ChargingStationBlockEntity> CHARGING_STATION = register(ChargingStationBlockEntity::new, "charging_station", CGContent.Machine.CHARGING_STATION);
 
     public static <T extends BlockEntity> BlockEntityType<T> register(Supplier<T> supplier, String name, ItemConvertible... items) {
         return register(supplier, name, Arrays.stream(items).map(itemConvertible -> Block.getBlockFromItem(itemConvertible.asItem())).toArray(Block[]::new));

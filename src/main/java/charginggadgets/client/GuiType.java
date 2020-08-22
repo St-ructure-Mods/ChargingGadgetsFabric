@@ -64,6 +64,7 @@ public final class GuiType<T extends BlockEntity> implements IMachineGuiHandler 
     private ScreenHandlerRegistry.ExtendedClientHandlerFactory<BuiltScreenHandler> getScreenHandlerFactory() {
         return (syncId, playerInventory, packetByteBuf) -> {
             final BlockEntity blockEntity = playerInventory.player.world.getBlockEntity(packetByteBuf.readBlockPos());
+            assert blockEntity != null;
             BuiltScreenHandler screenHandler = ((BuiltScreenHandlerProvider) blockEntity).createScreenHandler(syncId, playerInventory.player);
 
             //Set the screen handler type, not ideal but works lol

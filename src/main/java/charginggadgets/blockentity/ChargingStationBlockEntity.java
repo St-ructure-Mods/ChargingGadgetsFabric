@@ -3,94 +3,96 @@ package charginggadgets.blockentity;
 import charginggadgets.config.CGConfig;
 import charginggadgets.init.CGBlockEntities;
 import charginggadgets.init.CGContent;
-import charginggadgets.utils.IIntArray;
 import net.minecraft.block.BlockState;
+import net.minecraft.block.entity.AbstractFurnaceBlockEntity;
 import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.inventory.Inventories;
+import net.minecraft.item.BucketItem;
+import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.CompoundTag;
+import net.minecraft.item.Items;
 import net.minecraft.util.math.Direction;
 import reborncore.api.IToolDrop;
 import reborncore.api.blockentity.InventoryProvider;
 import reborncore.client.screen.BuiltScreenHandlerProvider;
 import reborncore.client.screen.builder.BuiltScreenHandler;
 import reborncore.client.screen.builder.ScreenHandlerBuilder;
+import reborncore.common.blocks.BlockMachineBase;
 import reborncore.common.powerSystem.PowerAcceptorBlockEntity;
 import reborncore.common.util.RebornInventory;
-import team.reborn.energy.Energy;
+
+import java.util.Map;
 
 public class ChargingStationBlockEntity extends PowerAcceptorBlockEntity implements IToolDrop, InventoryProvider, BuiltScreenHandlerProvider {
-    public enum Slots {
-        FUEL(0),
-        CHARGE(1);
-
-        int id;
-
-        Slots(int number) {
-            id = number;
-        }
-
-        public int getId() {
-            return id;
-        }
-    }
-
-    private final int inventorySize = 1;
-
+    private final int inventorySize = 2;
     public RebornInventory<ChargingStationBlockEntity> inventory = new RebornInventory<>(inventorySize, "ChargingStationBlockEntity", 64, this);
-
-    private int counter = 0;
-    private int maxBurn = 0;
-
-    public final IIntArray data = new IIntArray() {
-        @Override
-        public int get(int index) {
-          //  switch (index) {
-           //     case 0:
-             //       return ChargingStationBlockEntity.this.energyStorage.getEnergyStored() / 32;
-            //    case 1:
-             //       return ChargingStationBlockEntity.this.energyStorage.getMaxEnergyStored() / 32;
-            //    case 2:
-              //      return ChargingStationBlockEntity.this.counter;
-          //      case 3:
-             //       return ChargingStationBlockEntity.this.maxBurn;
-            //    default:
-               //     throw new IllegalArgumentException("Invalid index: " + index);
-              // }
-              return 2;
-        }
-
-        @Override
-        public void set(int index, int value) {
-            throw new IllegalStateException("Cannot set values through IIntArray");
-        }
-
-        @Override
-        public int size() {
-            return 4;
-        }
-    };
+    public int fuelSlot = 0;
+    public int burnTime;
+    public int totalBurnTime = 0;
+    public boolean isBurning;
+    public boolean lastTickBurning;
+    ItemStack burnItem;
 
     public ChargingStationBlockEntity() {
         super(CGBlockEntities.CHARGING_STATION);
     }
 
-    // TilePowerAcceptor
+    public static int getItemBurnTime(ItemStack stack) {
+        if (stack.isEmpty()) {
+            return 0;
+        }
+        Map<Item, Integer> burnMap = AbstractFurnaceBlockEntity.createFuelTimeMap();
+        if (burnMap.containsKey(stack.getItem())) {
+            return burnMap.get(stack.getItem()) / 4;
+        }
+        return 0;
+    }
+
     @Override
     public void tick() {
         super.tick();
-
         if (world.isClient) {
             return;
         }
+        discharge(1);
+        if (getEnergy() < getMaxPower()) {
+            if (burnTime > 0) {
+                burnTime--;
+                addEnergy(1000);
+                isBurning = true;
+            }
+        } else {
+            isBurning = false;
+            updateState();
+        }
 
-        for (int i = 0; i < inventorySize; i++) {
-            ItemStack stack = inventory.getStack(i);
+        if (burnTime == 0) {
+            updateState();
+            burnTime = totalBurnTime = ChargingStationBlockEntity.getItemBurnTime(inventory.getStack(fuelSlot));
+            if (burnTime > 0) {
+                updateState();
+                burnItem = inventory.getStack(fuelSlot);
+                if (inventory.getStack(fuelSlot).getCount() == 1) {
+                    if (inventory.getStack(fuelSlot).getItem() == Items.LAVA_BUCKET || inventory.getStack(fuelSlot).getItem() instanceof BucketItem) {
+                        inventory.setStack(fuelSlot, new ItemStack(Items.BUCKET));
+                    } else {
+                        inventory.setStack(fuelSlot, ItemStack.EMPTY);
+                    }
+                } else {
+                    inventory.shrinkSlot(fuelSlot, 1);
+                }
+            }
+        }
 
-            if (Energy.valid(stack)) {
-                Energy.of(this)
-                        .into(Energy.of(stack))
-                        .move();
+        lastTickBurning = isBurning;
+    }
+
+    public void updateState() {
+        final BlockState BlockStateContainer = world.getBlockState(pos);
+        if (BlockStateContainer.getBlock() instanceof BlockMachineBase) {
+            final BlockMachineBase blockMachineBase = (BlockMachineBase) BlockStateContainer.getBlock();
+            boolean active = burnTime > 0 && getEnergy() < getMaxPower();
+            if (BlockStateContainer.get(BlockMachineBase.ACTIVE) != active) {
+                blockMachineBase.setActive(active, world, pos);
             }
         }
     }
@@ -107,7 +109,7 @@ public class ChargingStationBlockEntity extends PowerAcceptorBlockEntity impleme
 
     @Override
     public boolean canProvideEnergy(final Direction direction) {
-        return direction == null;
+        return false;
     }
 
     @Override
@@ -121,11 +123,6 @@ public class ChargingStationBlockEntity extends PowerAcceptorBlockEntity impleme
     }
 
     @Override
-    public boolean canBeUpgraded() {
-        return false;
-    }
-
-    @Override
     public ItemStack getToolDrop(final PlayerEntity entityPlayer) {
         return CGContent.Machine.CHARGING_STATION.getStack();
     }
@@ -135,40 +132,40 @@ public class ChargingStationBlockEntity extends PowerAcceptorBlockEntity impleme
         return inventory;
     }
 
+    public int getBurnTime() {
+        return burnTime;
+    }
+
+    public void setBurnTime(final int burnTime) {
+        this.burnTime = burnTime;
+    }
+
+    public int getTotalBurnTime() {
+        return totalBurnTime;
+    }
+
+    public void setTotalBurnTime(final int totalBurnTime) {
+        this.totalBurnTime = totalBurnTime;
+    }
+
+    public int getScaledBurnTime(final int i) {
+        return (int) ((float) burnTime / (float) totalBurnTime * i);
+    }
+
     @Override
     public BuiltScreenHandler createScreenHandler(int syncID, final PlayerEntity player) {
-        return new ScreenHandlerBuilder("chargingstation").player(player.inventory).inventory().hotbar().addInventory()
-                .blockEntity(this).energySlot(0, 62, 25).energySlot(1, 98, 25).energySlot(2, 62, 45).energySlot(3, 98, 45)
-                .energySlot(4, 62, 65).energySlot(5, 98, 65).syncEnergyValue().addInventory().create(this, syncID);
+        return new ScreenHandlerBuilder("chargingstation")
+                .player(player.inventory).inventory().hotbar().addInventory()
+                .blockEntity(this)
+//                .energySlot(2, 7, 72)
+                .fuelSlot(0, 65, 43)
+                .slot(1, 119, 43)
+                .syncEnergyValue()
+                .addInventory().create(this, syncID);
     }
 
     @Override
-    public void fromTag(BlockState state, CompoundTag tag) {
-        super.fromTag(state, tag);
-        inventory = new RebornInventory<>(inventorySize, "ChargingStationBlockEntity", 64, this);;
-        Inventories.fromTag(tag, this.getInventory().getStacks());
-    }
-
-    @Override
-    public CompoundTag toTag(CompoundTag tag) {
-        super.toTag(tag);
-        Inventories.toTag(tag, this.getInventory().getStacks());
-        return tag;
-    }
-
-    public double getMaxPower() {
-        return this.data.get(1) * 32;
-    }
-
-    public double getEnergy() {
-        return this.data.get(0) * 32;
-    }
-
-    public int getMaxBurn() {
-        return this.data.get(3);
-    }
-
-    public int getRemaining() {
-        return this.data.get(2);
+    public boolean canBeUpgraded() {
+        return false;
     }
 }
