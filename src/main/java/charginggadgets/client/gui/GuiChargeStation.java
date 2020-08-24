@@ -2,13 +2,11 @@ package charginggadgets.client.gui;
 
 import charginggadgets.blockentity.ChargingStationBlockEntity;
 import charginggadgets.ChargingGadgets;
-import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.util.Identifier;
 import reborncore.client.gui.builder.GuiBase;
 import reborncore.client.screen.builder.BuiltScreenHandler;
-
 public class GuiChargeStation extends GuiBase<BuiltScreenHandler> {
     private static final Identifier background = new Identifier(ChargingGadgets.MOD_ID, "textures/gui/charging_station.png");
 
@@ -22,7 +20,6 @@ public class GuiChargeStation extends GuiBase<BuiltScreenHandler> {
     @Override
     protected void drawBackground(MatrixStack matrixStack, final float f, final int mouseX, final int mouseY) {
         super.drawBackground(matrixStack, f, mouseX, mouseY);
-        final GuiBase.Layer layer = GuiBase.Layer.BACKGROUND;
 
         getMinecraft().getTextureManager().bindTexture(background);
         drawTexture(matrixStack, getGuiLeft(), getGuiTop(), 0, 0, this.backgroundWidth, 80);
@@ -35,8 +32,8 @@ public class GuiChargeStation extends GuiBase<BuiltScreenHandler> {
         }
 
         int maxEnergy = (int) this.blockEntity.getMaxPower(), height = 70;
+
         if (maxEnergy > 0) {
-            System.out.println("HERE");
             int remaining = (int) ((this.blockEntity.getEnergy() * height) / maxEnergy);
             drawTexture(matrixStack, getGuiLeft() + 8, getGuiTop() + 78 - remaining, 176, 84 - remaining, 16, remaining + 1);
         }
@@ -45,9 +42,5 @@ public class GuiChargeStation extends GuiBase<BuiltScreenHandler> {
     @Override
     protected void drawForeground(MatrixStack matrixStack, int mouseX, int mouseY) {
         super.drawForeground(matrixStack, mouseX, mouseY);
-        final GuiBase.Layer layer = GuiBase.Layer.FOREGROUND;
-
-//        builder.drawBurnBar(matrixStack, this, blockEntity.getScaledBurnTime(1), 100, 50, 26, mouseX, mouseY, layer);
-//        builder.drawMultiEnergyBar(matrixStack, this, 9, 19, (int) blockEntity.getEnergy(), (int) blockEntity.getMaxPower(), mouseX, mouseY, 0, layer);
     }
 }
