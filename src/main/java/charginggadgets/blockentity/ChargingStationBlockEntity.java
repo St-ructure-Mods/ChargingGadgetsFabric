@@ -167,7 +167,12 @@ public class ChargingStationBlockEntity extends PowerAcceptorBlockEntity impleme
     }
 
     @Override
-    public boolean canBeUpgraded() {
-        return false;
-    }
+	public boolean canBeUpgraded() {
+		return false;
+	}
+
+	@Override
+	public boolean hasSlotConfig() {
+		return false;
+	}
 }
