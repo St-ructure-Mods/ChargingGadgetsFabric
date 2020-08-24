@@ -3,7 +3,6 @@ package charginggadgets.blockentity;
 import charginggadgets.config.CGConfig;
 import charginggadgets.init.CGBlockEntities;
 import charginggadgets.init.CGContent;
-import jdk.internal.jline.internal.Nullable;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.entity.AbstractFurnaceBlockEntity;
 import net.minecraft.entity.player.PlayerEntity;
@@ -17,7 +16,6 @@ import reborncore.api.blockentity.InventoryProvider;
 import reborncore.client.screen.BuiltScreenHandlerProvider;
 import reborncore.client.screen.builder.BuiltScreenHandler;
 import reborncore.client.screen.builder.ScreenHandlerBuilder;
-import reborncore.common.blockentity.RedstoneConfiguration;
 import reborncore.common.blocks.BlockMachineBase;
 import reborncore.common.powerSystem.PowerAcceptorBlockEntity;
 import reborncore.common.util.RebornInventory;
@@ -77,12 +75,12 @@ public class ChargingStationBlockEntity extends PowerAcceptorBlockEntity impleme
     }
 
     private void tryCharge() {
-        if (!inventory.getStack(Slots.CHARGE.id).isEmpty()) {
-            ItemStack stack = inventory.getStack(Slots.CHARGE.id);
+        ItemStack chargeSlot = inventory.getStack(Slots.CHARGE.id);
 
-            if (Energy.valid(stack)) {
+        if (!chargeSlot.isEmpty()) {
+            if (Energy.valid(chargeSlot)) {
                 Energy.of(this)
-                        .into(Energy.of(stack))
+                        .into(Energy.of(chargeSlot))
                         .move(this.getBaseMaxInput());
             }
         }
