@@ -2,17 +2,24 @@ package charginggadgets.blocks;
 
 import charginggadgets.blockentity.ChargingStationBlockEntity;
 import charginggadgets.client.GuiType;
+import charginggadgets.init.CGContent;
 import jdk.internal.jline.internal.Nullable;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockRenderType;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.entity.BlockEntity;
+import net.minecraft.entity.ItemEntity;
+import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.ItemPlacementContext;
+import net.minecraft.item.ItemStack;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.state.StateManager;
 import net.minecraft.state.property.DirectionProperty;
 import net.minecraft.state.property.Properties;
+import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
 import net.minecraft.world.BlockView;
+import net.minecraft.world.World;
 
 public class ChargingStationBlock extends GenericMachineBlock {
     public static final DirectionProperty FACING = Properties.HORIZONTAL_FACING;
@@ -43,5 +50,24 @@ public class ChargingStationBlock extends GenericMachineBlock {
     @Override
     public BlockRenderType getRenderType(BlockState state) {
         return BlockRenderType.MODEL;
+    }
+
+    @Override
+    public void onBreak(World world, BlockPos pos, BlockState state, PlayerEntity player) {
+        BlockEntity blockEntity = world.getBlockEntity(pos);
+        if (blockEntity instanceof ChargingStationBlockEntity) {
+            ChargingStationBlockEntity chargingStationBlockEntity = (ChargingStationBlockEntity) blockEntity;
+            if (!world.isClient && player.isCreative() && chargingStationBlockEntity.getEnergy() > 0) {
+                ItemStack itemStack = new ItemStack(CGContent.Machine.CHARGING_STATION);
+                CompoundTag tag = chargingStationBlockEntity.serializeEnergy(new CompoundTag());
+                if (!tag.isEmpty()) {
+                    itemStack.putSubTag("energy", tag);
+                }
+
+                ItemEntity itemEntity = new ItemEntity(world, (double)pos.getX() + 0.5D, (double)pos.getY() + 0.5D, (double)pos.getZ() + 0.5D, itemStack);
+                itemEntity.setToDefaultPickupDelay();
+                world.spawnEntity(itemEntity);
+            }
+        }
     }
 }

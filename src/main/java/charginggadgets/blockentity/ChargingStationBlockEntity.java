@@ -10,6 +10,8 @@ import net.minecraft.item.BucketItem;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.IntTag;
 import net.minecraft.util.math.Direction;
 import reborncore.api.IToolDrop;
 import reborncore.api.blockentity.InventoryProvider;
@@ -202,5 +204,10 @@ public class ChargingStationBlockEntity extends PowerAcceptorBlockEntity impleme
 	@Override
 	public boolean hasSlotConfig() {
 		return false;
-	}
+    }
+    
+    public CompoundTag serializeEnergy(CompoundTag tag) {
+        tag.put("energy", IntTag.of((int) this.getEnergy()));
+        return tag;
+    }
 }
