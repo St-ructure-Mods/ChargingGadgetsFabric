@@ -3,6 +3,8 @@ package charginggadgets.blockentity;
 import charginggadgets.config.CGConfig;
 import charginggadgets.init.CGBlockEntities;
 import charginggadgets.init.CGContent;
+import net.fabricmc.fabric.api.block.entity.BlockEntityClientSerializable;
+import net.fabricmc.fabric.api.util.NbtType;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.entity.AbstractFurnaceBlockEntity;
 import net.minecraft.entity.player.PlayerEntity;
@@ -25,7 +27,7 @@ import team.reborn.energy.Energy;
 
 import java.util.Map;
 
-public class ChargingStationBlockEntity extends PowerAcceptorBlockEntity implements IToolDrop, InventoryProvider, BuiltScreenHandlerProvider {
+public class ChargingStationBlockEntity extends PowerAcceptorBlockEntity implements IToolDrop, InventoryProvider, BuiltScreenHandlerProvider, BlockEntityClientSerializable {
     private final int inventorySize = 2;
     public RebornInventory<ChargingStationBlockEntity> inventory = new RebornInventory<>(inventorySize, "ChargingStationBlockEntity", 64, this);
 
@@ -185,7 +187,7 @@ public class ChargingStationBlockEntity extends PowerAcceptorBlockEntity impleme
 
     @Override
     public BuiltScreenHandler createScreenHandler(int syncID, final PlayerEntity player) {
-        return new ScreenHandlerBuilder("chargingstation")
+        return new ScreenHandlerBuilder("charging_station")
                 .player(player.inventory).inventory().hotbar().addInventory()
                 .blockEntity(this)
                 .fuelSlot(0, 65, 43)
@@ -205,9 +207,44 @@ public class ChargingStationBlockEntity extends PowerAcceptorBlockEntity impleme
 	public boolean hasSlotConfig() {
 		return false;
     }
-    
-    public CompoundTag serializeEnergy(CompoundTag tag) {
-        tag.put("energy", IntTag.of((int) this.getEnergy()));
+
+    @Override
+    public void fromTag(BlockState state, CompoundTag tag) {
+        super.fromTag(state, tag);
+        fromClientTag(tag);
+    }
+
+    @Override
+    public CompoundTag toTag(CompoundTag tag) {
+        super.toTag(tag);
+        return toClientTag(tag);
+    }
+
+    @Override
+    public void fromClientTag(CompoundTag tag) {
+        setEnergy(tag.getInt("energy"));
+    }
+
+    @Override
+    public CompoundTag toClientTag(CompoundTag tag) {
+        tag.putInt("energy", (int) getEnergy());
         return tag;
+    }
+
+    public static int getEnergyFromItemStack(ItemStack stack) {
+        CompoundTag tag = stack.getOrCreateTag();
+
+        int energy = 0;
+        if (tag.contains("energy", NbtType.INT)) {
+            energy = tag.getInt("color");
+        } else if (tag.contains("BlockEntityTag") && tag.getCompound("BlockEntityTag").contains("energy", NbtType.INT)) {
+            energy = tag.getCompound("BlockEntityTag").getInt("energy");
+        } else if (tag.contains("energy", NbtType.STRING)) {
+            try {
+                energy = Integer.parseInt(tag.getString("energy"));
+            } catch (NumberFormatException ignored) {}
+        }
+
+        return energy;
     }
 }

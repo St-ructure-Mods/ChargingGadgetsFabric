@@ -8,11 +8,16 @@ import net.minecraft.block.Block;
 import net.minecraft.block.BlockRenderType;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.entity.BlockEntity;
+import net.minecraft.entity.Entity;
 import net.minecraft.entity.ItemEntity;
+import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.ItemPlacementContext;
 import net.minecraft.item.ItemStack;
+import net.minecraft.loot.context.LootContext;
+import net.minecraft.loot.context.LootContextParameters;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.server.world.ServerWorld;
 import net.minecraft.state.StateManager;
 import net.minecraft.state.property.DirectionProperty;
 import net.minecraft.state.property.Properties;
@@ -20,6 +25,10 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
 import net.minecraft.world.BlockView;
 import net.minecraft.world.World;
+
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
 
 public class ChargingStationBlock extends GenericMachineBlock {
     public static final DirectionProperty FACING = Properties.HORIZONTAL_FACING;
@@ -53,21 +62,68 @@ public class ChargingStationBlock extends GenericMachineBlock {
     }
 
     @Override
-    public void onBreak(World world, BlockPos pos, BlockState state, PlayerEntity player) {
-        BlockEntity blockEntity = world.getBlockEntity(pos);
-        if (blockEntity instanceof ChargingStationBlockEntity) {
-            ChargingStationBlockEntity chargingStationBlockEntity = (ChargingStationBlockEntity) blockEntity;
-            if (!world.isClient && player.isCreative() && chargingStationBlockEntity.getEnergy() > 0) {
-                ItemStack itemStack = new ItemStack(CGContent.Machine.CHARGING_STATION);
-                CompoundTag tag = chargingStationBlockEntity.serializeEnergy(new CompoundTag());
-                if (!tag.isEmpty()) {
-                    itemStack.putSubTag("energy", tag);
-                }
-
-                ItemEntity itemEntity = new ItemEntity(world, (double)pos.getX() + 0.5D, (double)pos.getY() + 0.5D, (double)pos.getZ() + 0.5D, itemStack);
-                itemEntity.setToDefaultPickupDelay();
-                world.spawnEntity(itemEntity);
+    public void onPlaced(World worldIn, BlockPos pos, BlockState state, LivingEntity placer, ItemStack stack) {
+        if (stack.hasTag() && stack.getTag().contains("blockEntity_data")) {
+            BlockEntity blockEntity = worldIn.getBlockEntity(pos);
+            if (blockEntity instanceof ChargingStationBlockEntity) {
+                CompoundTag nbt = stack.getTag().getCompound("blockEntity_data");
+                double energy = stack.getTag().getDouble("energy");
+                ((ChargingStationBlockEntity) blockEntity).setEnergy(energy);
+                this.injectLocationData(nbt, pos);
+                blockEntity.fromTag(state, nbt);
+                blockEntity.markDirty();
             }
         }
+    }
+
+    @Override
+    public List<ItemStack> getDroppedStacks(BlockState state, LootContext.Builder builder) {
+        BlockEntity blockEntity = builder.get(LootContextParameters.BLOCK_ENTITY);
+
+        List<ItemStack> drops = super.getDroppedStacks(state, builder);
+        if (blockEntity instanceof ChargingStationBlockEntity) {
+            ChargingStationBlockEntity chargingStationBlockEntity = (ChargingStationBlockEntity) blockEntity;
+            drops.stream()
+                    .filter(e -> e.getItem() == CGContent.Machine.CHARGING_STATION.asItem())
+                    .findFirst()
+                    .ifPresent(e -> e.getOrCreateTag().putDouble("energy", chargingStationBlockEntity.getEnergy()));
+        }
+
+        return drops;
+    }
+
+    @Override
+    public Optional<ItemStack> getDropWithContents(World world, BlockPos pos, ItemStack stack) {
+        BlockEntity blockEntity = world.getBlockEntity(pos);
+
+        System.out.println(blockEntity.getClass());
+        if (blockEntity == null) {
+            return Optional.empty();
+        } else {
+            ItemStack newStack = stack.copy();
+            CompoundTag blockEntityData = blockEntity.toTag(new CompoundTag());
+            this.stripLocationData(blockEntityData);
+            if (!newStack.hasTag()) {
+                newStack.setTag(new CompoundTag());
+            }
+
+            newStack.getTag().put("blockEntity_data", blockEntityData);
+            if (blockEntity instanceof ChargingStationBlockEntity) {
+                newStack.getTag().putDouble("energy", ((ChargingStationBlockEntity) blockEntity).getEnergy());
+            }
+            return Optional.of(newStack);
+        }
+    }
+
+    private void injectLocationData(CompoundTag compound, BlockPos pos) {
+        compound.putInt("x", pos.getX());
+        compound.putInt("y", pos.getY());
+        compound.putInt("z", pos.getZ());
+    }
+
+    private void stripLocationData(CompoundTag compound) {
+        compound.remove("x");
+        compound.remove("y");
+        compound.remove("z");
     }
 }
