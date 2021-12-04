@@ -225,9 +225,8 @@ public class ChargingStationBlockEntity extends PowerAcceptorBlockEntity impleme
     }
 
     @Override
-    public NbtCompound writeNbt(NbtCompound tag) {
+    public void writeNbt(NbtCompound tag) {
         super.writeNbt(tag);
-        return toClientTag(tag);
     }
 
     @Override

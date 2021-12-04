@@ -51,7 +51,7 @@ public class ChargingStationBlock extends GenericMachineBlock {
     }
 
     @Override
-    public BlockRenderType getRenderType(BlockState state) {
+    public BlockRenderType getRenderType() {
         return BlockRenderType.MODEL;
     }
 
@@ -71,12 +71,12 @@ public class ChargingStationBlock extends GenericMachineBlock {
     }
 
     @Override
+    @SuppressWarnings("deprecated")
     public List<ItemStack> getDroppedStacks(BlockState state, LootContext.Builder builder) {
         BlockEntity blockEntity = builder.get(LootContextParameters.BLOCK_ENTITY);
 
         List<ItemStack> drops = super.getDroppedStacks(state, builder);
-        if (blockEntity instanceof ChargingStationBlockEntity) {
-            ChargingStationBlockEntity chargingStationBlockEntity = (ChargingStationBlockEntity) blockEntity;
+        if (blockEntity instanceof ChargingStationBlockEntity chargingStationBlockEntity) {
             drops.stream()
                     .filter(e -> e.getItem() == CGContent.Machine.CHARGING_STATION.asItem())
                     .findFirst()
@@ -94,7 +94,7 @@ public class ChargingStationBlock extends GenericMachineBlock {
             return Optional.empty();
         } else {
             ItemStack newStack = stack.copy();
-            NbtCompound blockEntityData = blockEntity.writeNbt(new NbtCompound());
+            NbtCompound blockEntityData = blockEntity.createNbt();
             this.stripLocationData(blockEntityData);
             if (!newStack.hasNbt()) {
                 newStack.setNbt(new NbtCompound());

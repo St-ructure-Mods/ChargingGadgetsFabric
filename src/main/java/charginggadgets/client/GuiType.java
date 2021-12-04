@@ -21,7 +21,6 @@ import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
-import org.jetbrains.annotations.Nullable;
 import reborncore.RebornCore;
 import reborncore.api.blockentity.IMachineGuiHandler;
 import reborncore.client.screen.BuiltScreenHandlerProvider;
@@ -94,10 +93,10 @@ public final class GuiType<T extends BlockEntity> implements IMachineGuiHandler 
                     return new LiteralText("What is this for?");
                 }
 
-                @Nullable
                 @Override
                 public ScreenHandler createMenu(int syncId, PlayerInventory inv, PlayerEntity player) {
                     final BlockEntity blockEntity = player.world.getBlockEntity(pos);
+                    assert blockEntity != null;
                     BuiltScreenHandler screenHandler = ((BuiltScreenHandlerProvider) blockEntity).createScreenHandler(syncId, player);
                     screenHandler.setType(screenHandlerType);
                     return screenHandler;
