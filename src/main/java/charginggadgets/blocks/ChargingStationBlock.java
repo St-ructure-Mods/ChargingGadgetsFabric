@@ -3,37 +3,31 @@ package charginggadgets.blocks;
 import charginggadgets.blockentity.ChargingStationBlockEntity;
 import charginggadgets.client.GuiType;
 import charginggadgets.init.CGContent;
-import jdk.internal.jline.internal.Nullable;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockRenderType;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.entity.BlockEntity;
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.ItemEntity;
 import net.minecraft.entity.LivingEntity;
-import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.ItemPlacementContext;
 import net.minecraft.item.ItemStack;
 import net.minecraft.loot.context.LootContext;
 import net.minecraft.loot.context.LootContextParameters;
-import net.minecraft.nbt.CompoundTag;
-import net.minecraft.server.world.ServerWorld;
+import net.minecraft.nbt.NbtCompound;
 import net.minecraft.state.StateManager;
 import net.minecraft.state.property.DirectionProperty;
 import net.minecraft.state.property.Properties;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
-import net.minecraft.world.BlockView;
 import net.minecraft.world.World;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
 
 public class ChargingStationBlock extends GenericMachineBlock {
     public static final DirectionProperty FACING = Properties.HORIZONTAL_FACING;
 
-    public ChargingStationBlock() {
+    public ChargingStationBlock(BlockPos pos, BlockState state) {
         super(GuiType.CHARGING_STATION, ChargingStationBlockEntity::new);
 
         setDefaultState(getStateManager().getDefaultState().with(FACING, Direction.NORTH));
@@ -52,8 +46,8 @@ public class ChargingStationBlock extends GenericMachineBlock {
     }
 
     @Override
-    public BlockEntity createBlockEntity(BlockView world) {
-        return new ChargingStationBlockEntity();
+    public BlockEntity createBlockEntity(BlockPos pos, BlockState state) {
+        return new ChargingStationBlockEntity(pos, state);
     }
 
     @Override
@@ -63,14 +57,14 @@ public class ChargingStationBlock extends GenericMachineBlock {
 
     @Override
     public void onPlaced(World worldIn, BlockPos pos, BlockState state, LivingEntity placer, ItemStack stack) {
-        if (stack.hasTag() && stack.getTag().contains("blockEntity_data")) {
+        if (stack.hasNbt() && stack.getNbt().contains("blockEntity_data")) {
             BlockEntity blockEntity = worldIn.getBlockEntity(pos);
             if (blockEntity instanceof ChargingStationBlockEntity) {
-                CompoundTag nbt = stack.getTag().getCompound("blockEntity_data");
-                double energy = stack.getTag().getDouble("energy");
+                NbtCompound nbt = stack.getNbt().getCompound("blockEntity_data");
+                long energy = stack.getNbt().getLong("energy");
                 ((ChargingStationBlockEntity) blockEntity).setEnergy(energy);
                 this.injectLocationData(nbt, pos);
-                blockEntity.fromTag(state, nbt);
+                blockEntity.readNbt(nbt);
                 blockEntity.markDirty();
             }
         }
@@ -86,7 +80,7 @@ public class ChargingStationBlock extends GenericMachineBlock {
             drops.stream()
                     .filter(e -> e.getItem() == CGContent.Machine.CHARGING_STATION.asItem())
                     .findFirst()
-                    .ifPresent(e -> e.getOrCreateTag().putDouble("energy", chargingStationBlockEntity.getEnergy()));
+                    .ifPresent(e -> e.getOrCreateNbt().putLong("energy", chargingStationBlockEntity.getEnergy()));
         }
 
         return drops;
@@ -96,32 +90,31 @@ public class ChargingStationBlock extends GenericMachineBlock {
     public Optional<ItemStack> getDropWithContents(World world, BlockPos pos, ItemStack stack) {
         BlockEntity blockEntity = world.getBlockEntity(pos);
 
-        System.out.println(blockEntity.getClass());
         if (blockEntity == null) {
             return Optional.empty();
         } else {
             ItemStack newStack = stack.copy();
-            CompoundTag blockEntityData = blockEntity.toTag(new CompoundTag());
+            NbtCompound blockEntityData = blockEntity.writeNbt(new NbtCompound());
             this.stripLocationData(blockEntityData);
-            if (!newStack.hasTag()) {
-                newStack.setTag(new CompoundTag());
+            if (!newStack.hasNbt()) {
+                newStack.setNbt(new NbtCompound());
             }
 
-            newStack.getTag().put("blockEntity_data", blockEntityData);
+            newStack.getNbt().put("blockEntity_data", blockEntityData);
             if (blockEntity instanceof ChargingStationBlockEntity) {
-                newStack.getTag().putDouble("energy", ((ChargingStationBlockEntity) blockEntity).getEnergy());
+                newStack.getNbt().putDouble("energy", ((ChargingStationBlockEntity) blockEntity).getEnergy());
             }
             return Optional.of(newStack);
         }
     }
 
-    private void injectLocationData(CompoundTag compound, BlockPos pos) {
+    private void injectLocationData(NbtCompound compound, BlockPos pos) {
         compound.putInt("x", pos.getX());
         compound.putInt("y", pos.getY());
         compound.putInt("z", pos.getZ());
     }
 
-    private void stripLocationData(CompoundTag compound) {
+    private void stripLocationData(NbtCompound compound) {
         compound.remove("x");
         compound.remove("y");
         compound.remove("z");

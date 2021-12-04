@@ -9,6 +9,7 @@ import net.minecraft.util.Identifier;
 import net.minecraft.util.collection.DefaultedList;
 import net.minecraft.util.registry.Registry;
 import reborncore.RebornRegistry;
+import reborncore.common.powerSystem.RcEnergyItem;
 import team.reborn.energy.Energy;
 
 public class InitUtils {
@@ -30,8 +31,9 @@ public class InitUtils {
     public static void initPoweredItems(Item item, DefaultedList<ItemStack> itemList) {
         ItemStack uncharged = new ItemStack(item);
         ItemStack charged = new ItemStack(item);
+        RcEnergyItem energyItem = (RcEnergyItem) item;
 
-        Energy.of(charged).set(Energy.of(charged).getMaxStored());
+        energyItem.setStoredEnergy(charged, energyItem.getEnergyCapacity());
 
         itemList.add(uncharged);
         itemList.add(charged);

@@ -4,6 +4,8 @@ import charginggadgets.config.CGConfig;
 import charginggadgets.init.CGBlockEntities;
 import charginggadgets.init.CGContent;
 import net.fabricmc.fabric.api.block.entity.BlockEntityClientSerializable;
+import net.fabricmc.fabric.api.transfer.v1.context.ContainerItemContext;
+import net.fabricmc.fabric.api.transfer.v1.item.InventoryStorage;
 import net.fabricmc.fabric.api.util.NbtType;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.entity.AbstractFurnaceBlockEntity;
@@ -12,30 +14,41 @@ import net.minecraft.item.BucketItem;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
-import net.minecraft.nbt.CompoundTag;
-import net.minecraft.nbt.IntTag;
+import net.minecraft.nbt.NbtCompound;
+import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
+import net.minecraft.world.World;
 import reborncore.api.IToolDrop;
 import reborncore.api.blockentity.InventoryProvider;
 import reborncore.client.screen.BuiltScreenHandlerProvider;
 import reborncore.client.screen.builder.BuiltScreenHandler;
 import reborncore.client.screen.builder.ScreenHandlerBuilder;
+import reborncore.common.blockentity.MachineBaseBlockEntity;
 import reborncore.common.blocks.BlockMachineBase;
 import reborncore.common.powerSystem.PowerAcceptorBlockEntity;
+import reborncore.common.powerSystem.RcEnergyItem;
 import reborncore.common.util.RebornInventory;
-import team.reborn.energy.Energy;
+import team.reborn.energy.api.EnergyStorage;
+import team.reborn.energy.api.EnergyStorageUtil;
 
 import java.util.Map;
 
 public class ChargingStationBlockEntity extends PowerAcceptorBlockEntity implements IToolDrop, InventoryProvider, BuiltScreenHandlerProvider, BlockEntityClientSerializable {
     private final int inventorySize = 2;
+
     public RebornInventory<ChargingStationBlockEntity> inventory = new RebornInventory<>(inventorySize, "ChargingStationBlockEntity", 64, this);
+
+    public int burnTime;
+    public int totalBurnTime = 0;
+    public boolean isBurning;
+    public boolean lastTickBurning;
+    ItemStack burnItem;
 
     public enum Slots {
         FUEL(0),
         CHARGE(1);
 
-        int id;
+        private final int id;
 
         Slots(int number) {
             id = number;
@@ -46,14 +59,8 @@ public class ChargingStationBlockEntity extends PowerAcceptorBlockEntity impleme
         }
     }
 
-    public int burnTime;
-    public int totalBurnTime = 0;
-    public boolean isBurning;
-    public boolean lastTickBurning;
-    ItemStack burnItem;
-
-    public ChargingStationBlockEntity() {
-        super(CGBlockEntities.CHARGING_STATION);
+    public ChargingStationBlockEntity(BlockPos pos, BlockState state) {
+        super(CGBlockEntities.CHARGING_STATION, pos, state);
     }
 
     public static int getItemBurnTime(ItemStack stack) {
@@ -68,8 +75,8 @@ public class ChargingStationBlockEntity extends PowerAcceptorBlockEntity impleme
     }
 
     @Override
-    public void tick() {
-        super.tick();
+    public void tick(World world, BlockPos pos, BlockState state, MachineBaseBlockEntity blockEntity2) {
+        super.tick(world, pos, state, blockEntity2);
         if (world.isClient) {
             return;
         }
@@ -79,19 +86,22 @@ public class ChargingStationBlockEntity extends PowerAcceptorBlockEntity impleme
     }
 
     private void tryCharge() {
-        ItemStack chargeSlot = inventory.getStack(Slots.CHARGE.id);
+        ItemStack chargeSlot = inventory.getStack(Slots.CHARGE.getId());
 
-        if (!chargeSlot.isEmpty()) {
-            if (Energy.valid(chargeSlot)) {
-                Energy.of(this)
-                        .into(Energy.of(chargeSlot))
-                        .move(this.getBaseMaxInput());
-            }
+        Item item = chargeSlot.getItem();
+
+        if (!chargeSlot.isEmpty() && item instanceof RcEnergyItem energyItem) {
+            EnergyStorageUtil.move(
+                    getSideEnergyStorage(null),
+                    ContainerItemContext.ofSingleSlot(InventoryStorage.of(inventory, null).getSlot(Slots.CHARGE.getId())).find(EnergyStorage.ITEM),
+                    Long.MAX_VALUE,
+                    null
+            );
         }
     }
 
     private void tryBurn() {
-        if (getEnergy() < getMaxPower()) {
+        if (getEnergy() < getMaxStoredPower()) {
             if (burnTime > 0) {
                 burnTime--;
                 addEnergy(500000);
@@ -104,18 +114,18 @@ public class ChargingStationBlockEntity extends PowerAcceptorBlockEntity impleme
 
         if (burnTime == 0) {
             updateState();
-            burnTime = totalBurnTime = ChargingStationBlockEntity.getItemBurnTime(inventory.getStack(Slots.FUEL.id)) / 32;
+            burnTime = totalBurnTime = ChargingStationBlockEntity.getItemBurnTime(inventory.getStack(Slots.FUEL.getId())) / 32;
             if (burnTime > 0) {
                 updateState();
-                burnItem = inventory.getStack(Slots.FUEL.id);
-                if (inventory.getStack(Slots.FUEL.id).getCount() == 1) {
-                    if (inventory.getStack(Slots.FUEL.id).getItem() == Items.LAVA_BUCKET || inventory.getStack(Slots.FUEL.id).getItem() instanceof BucketItem) {
-                        inventory.setStack(Slots.FUEL.id, new ItemStack(Items.BUCKET));
+                burnItem = inventory.getStack(Slots.FUEL.getId());
+                if (inventory.getStack(Slots.FUEL.getId()).getCount() == 1) {
+                    if (inventory.getStack(Slots.FUEL.getId()).getItem() == Items.LAVA_BUCKET || inventory.getStack(Slots.FUEL.getId()).getItem() instanceof BucketItem) {
+                        inventory.setStack(Slots.FUEL.getId(), new ItemStack(Items.BUCKET));
                     } else {
-                        inventory.setStack(Slots.FUEL.id, ItemStack.EMPTY);
+                        inventory.setStack(Slots.FUEL.getId(), ItemStack.EMPTY);
                     }
                 } else {
-                    inventory.shrinkSlot(Slots.FUEL.id, 1);
+                    inventory.shrinkSlot(Slots.FUEL.getId(), 1);
                 }
             }
         }
@@ -124,10 +134,10 @@ public class ChargingStationBlockEntity extends PowerAcceptorBlockEntity impleme
     }
 
     public void updateState() {
+        assert world != null;
         final BlockState BlockStateContainer = world.getBlockState(pos);
-        if (BlockStateContainer.getBlock() instanceof BlockMachineBase) {
-            final BlockMachineBase blockMachineBase = (BlockMachineBase) BlockStateContainer.getBlock();
-            boolean active = burnTime > 0 && getEnergy() < getMaxPower();
+        if (BlockStateContainer.getBlock() instanceof final BlockMachineBase blockMachineBase) {
+            boolean active = burnTime > 0 && getEnergy() < getMaxStoredPower();
             if (BlockStateContainer.get(BlockMachineBase.ACTIVE) != active) {
                 blockMachineBase.setActive(active, world, pos);
             }
@@ -135,7 +145,7 @@ public class ChargingStationBlockEntity extends PowerAcceptorBlockEntity impleme
     }
 
     @Override
-    public double getBaseMaxPower() {
+    public long getBaseMaxPower() {
         return CGConfig.chargingStationMaxEnergy;
     }
 
@@ -150,12 +160,12 @@ public class ChargingStationBlockEntity extends PowerAcceptorBlockEntity impleme
     }
 
     @Override
-    public double getBaseMaxOutput() {
+    public long getBaseMaxOutput() {
         return CGConfig.chargingStationMaxOutput;
     }
 
     @Override
-    public double getBaseMaxInput() {
+    public long getBaseMaxInput() {
         return CGConfig.chargingStationMaxInput;
     }
 
@@ -188,7 +198,7 @@ public class ChargingStationBlockEntity extends PowerAcceptorBlockEntity impleme
     @Override
     public BuiltScreenHandler createScreenHandler(int syncID, final PlayerEntity player) {
         return new ScreenHandlerBuilder("charging_station")
-                .player(player.inventory).inventory().hotbar().addInventory()
+                .player(player.getInventory()).inventory().hotbar().addInventory()
                 .blockEntity(this)
                 .fuelSlot(0, 65, 43)
                 .slot(1, 119, 43)
@@ -209,30 +219,30 @@ public class ChargingStationBlockEntity extends PowerAcceptorBlockEntity impleme
     }
 
     @Override
-    public void fromTag(BlockState state, CompoundTag tag) {
-        super.fromTag(state, tag);
+    public void readNbt(NbtCompound tag) {
+        super.readNbt(tag);
         fromClientTag(tag);
     }
 
     @Override
-    public CompoundTag toTag(CompoundTag tag) {
-        super.toTag(tag);
+    public NbtCompound writeNbt(NbtCompound tag) {
+        super.writeNbt(tag);
         return toClientTag(tag);
     }
 
     @Override
-    public void fromClientTag(CompoundTag tag) {
+    public void fromClientTag(NbtCompound tag) {
         setEnergy(tag.getInt("energy"));
     }
 
     @Override
-    public CompoundTag toClientTag(CompoundTag tag) {
+    public NbtCompound toClientTag(NbtCompound tag) {
         tag.putInt("energy", (int) getEnergy());
         return tag;
     }
 
     public static int getEnergyFromItemStack(ItemStack stack) {
-        CompoundTag tag = stack.getOrCreateTag();
+        NbtCompound tag = stack.getOrCreateNbt();
 
         int energy = 0;
         if (tag.contains("energy", NbtType.INT)) {
