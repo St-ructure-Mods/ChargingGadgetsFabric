@@ -28,5 +28,7 @@ public class ChargingGadgets implements ModInitializer {
         new Configuration(CGConfig.class, "charging_gadgets");
 
         ModRegistry.setup();
+
+
     }
 }

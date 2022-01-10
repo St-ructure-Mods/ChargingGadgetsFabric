@@ -3,7 +3,6 @@ package charginggadgets.blockentity;
 import charginggadgets.config.CGConfig;
 import charginggadgets.init.CGBlockEntities;
 import charginggadgets.init.CGContent;
-import net.fabricmc.fabric.api.block.entity.BlockEntityClientSerializable;
 import net.fabricmc.fabric.api.transfer.v1.context.ContainerItemContext;
 import net.fabricmc.fabric.api.transfer.v1.item.InventoryStorage;
 import net.fabricmc.fabric.api.util.NbtType;
@@ -15,6 +14,7 @@ import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
 import net.minecraft.nbt.NbtCompound;
+import net.minecraft.server.world.ServerChunkManager;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
 import net.minecraft.world.World;
@@ -30,13 +30,14 @@ import reborncore.common.powerSystem.RcEnergyItem;
 import reborncore.common.util.RebornInventory;
 import team.reborn.energy.api.EnergyStorage;
 import team.reborn.energy.api.EnergyStorageUtil;
+import team.reborn.energy.api.base.SimpleBatteryItem;
 
 import java.util.Map;
 
-public class ChargingStationBlockEntity extends PowerAcceptorBlockEntity implements IToolDrop, InventoryProvider, BuiltScreenHandlerProvider, BlockEntityClientSerializable {
+public class ChargingStationBlockEntity extends PowerAcceptorBlockEntity implements IToolDrop, InventoryProvider, BuiltScreenHandlerProvider {
     private final int inventorySize = 2;
 
-    public RebornInventory<ChargingStationBlockEntity> inventory = new RebornInventory<>(inventorySize, "ChargingStationBlockEntity", 64, this);
+    public RebornInventory<ChargingStationBlockEntity> inventory;
 
     public int burnTime;
     public int totalBurnTime = 0;
@@ -61,6 +62,7 @@ public class ChargingStationBlockEntity extends PowerAcceptorBlockEntity impleme
 
     public ChargingStationBlockEntity(BlockPos pos, BlockState state) {
         super(CGBlockEntities.CHARGING_STATION, pos, state);
+        inventory = new RebornInventory<>(inventorySize, "ChargingStationBlockEntity", 64, this);
     }
 
     public static int getItemBurnTime(ItemStack stack) {
@@ -82,7 +84,9 @@ public class ChargingStationBlockEntity extends PowerAcceptorBlockEntity impleme
         }
 
         tryBurn();
-        tryCharge();
+        if (!inventory.getStack(Slots.CHARGE.id).isEmpty()) {
+            discharge(Slots.CHARGE.id);
+        }
     }
 
     private void tryCharge() {
@@ -90,7 +94,7 @@ public class ChargingStationBlockEntity extends PowerAcceptorBlockEntity impleme
 
         Item item = chargeSlot.getItem();
 
-        if (!chargeSlot.isEmpty() && item instanceof RcEnergyItem energyItem) {
+        if (!chargeSlot.isEmpty() && EnergyStorageUtil.isEnergyStorage(chargeSlot)) {
             EnergyStorageUtil.move(
                     getSideEnergyStorage(null),
                     ContainerItemContext.ofSingleSlot(InventoryStorage.of(inventory, null).getSlot(Slots.CHARGE.getId())).find(EnergyStorage.ITEM),
@@ -151,12 +155,12 @@ public class ChargingStationBlockEntity extends PowerAcceptorBlockEntity impleme
 
     @Override
     public boolean canAcceptEnergy(final Direction direction) {
-        return true;
+        return false;
     }
 
     @Override
     public boolean canProvideEnergy(final Direction direction) {
-        return false;
+        return true;
     }
 
     @Override
@@ -221,23 +225,13 @@ public class ChargingStationBlockEntity extends PowerAcceptorBlockEntity impleme
     @Override
     public void readNbt(NbtCompound tag) {
         super.readNbt(tag);
-        fromClientTag(tag);
+        setEnergy(tag.getInt("energy"));
     }
 
     @Override
     public void writeNbt(NbtCompound tag) {
         super.writeNbt(tag);
-    }
-
-    @Override
-    public void fromClientTag(NbtCompound tag) {
-        setEnergy(tag.getInt("energy"));
-    }
-
-    @Override
-    public NbtCompound toClientTag(NbtCompound tag) {
         tag.putInt("energy", (int) getEnergy());
-        return tag;
     }
 
     public static int getEnergyFromItemStack(ItemStack stack) {
