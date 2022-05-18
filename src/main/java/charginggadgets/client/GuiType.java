@@ -7,62 +7,74 @@ import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.fabricmc.fabric.api.client.screenhandler.v1.ScreenRegistry;
 import net.fabricmc.fabric.api.screenhandler.v1.ExtendedScreenHandlerFactory;
+import net.fabricmc.fabric.api.screenhandler.v1.ExtendedScreenHandlerType;
 import net.fabricmc.fabric.api.screenhandler.v1.ScreenHandlerRegistry;
-import net.minecraft.block.entity.BlockEntity;
-import net.minecraft.client.gui.screen.ingame.HandledScreen;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.entity.player.PlayerInventory;
-import net.minecraft.network.PacketByteBuf;
-import net.minecraft.screen.ScreenHandler;
-import net.minecraft.screen.ScreenHandlerType;
-import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.text.LiteralText;
-import net.minecraft.text.Text;
-import net.minecraft.util.Identifier;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.world.World;
+import net.minecraft.client.gui.screens.MenuScreens;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
+import net.minecraft.client.gui.screens.inventory.MenuAccess;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Registry;
+import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.TextComponent;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.player.Inventory;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.inventory.AbstractContainerMenu;
+import net.minecraft.world.inventory.MenuType;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.entity.BlockEntity;
 import reborncore.RebornCore;
 import reborncore.api.blockentity.IMachineGuiHandler;
-import reborncore.client.screen.BuiltScreenHandlerProvider;
-import reborncore.client.screen.builder.BuiltScreenHandler;
+import reborncore.common.screen.BuiltScreenHandler;
+import reborncore.common.screen.BuiltScreenHandlerProvider;
 
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Supplier;
 
 public final class GuiType<T extends BlockEntity> implements IMachineGuiHandler {
-    private static final Map<Identifier, GuiType<?>> TYPES = new HashMap<>();
+    static final Map<ResourceLocation, GuiType<?>> TYPES = new HashMap<>();
 
-    public static final GuiType<ChargingStationBlockEntity> CHARGING_STATION = register("chargingstation", () -> () -> GuiChargeStation::new);
+    public static final GuiType<ChargingStationBlockEntity> CHARGING_STATION = register("chargingstation", GuiChargeStation::new);
 
-    private static <T extends BlockEntity> GuiType<T> register(String id, Supplier<Supplier<GuiFactory<T>>> factorySupplierMeme) {
-        return register(new Identifier(ChargingGadgets.MOD_ID, id), factorySupplierMeme);
+    private static <T extends BlockEntity> GuiType<T> register(String id, GuiFactory<T> factory) {
+        return register(new ResourceLocation(ChargingGadgets.MOD_ID, id), factory);
     }
 
-    public static <T extends BlockEntity> GuiType<T> register(Identifier identifier, Supplier<Supplier<GuiFactory<T>>> factorySupplierMeme) {
+    public static <T extends BlockEntity> GuiType<T> register(ResourceLocation identifier, GuiFactory<T> factory) {
         if (TYPES.containsKey(identifier)) {
             throw new RuntimeException("Duplicate gui type found");
         }
-        GuiType<T> type = new GuiType<>(identifier, factorySupplierMeme);
+        GuiType<T> type = new GuiType<>(identifier, factory);
         TYPES.put(identifier, type);
         return type;
     }
 
-    private final Identifier identifier;
-    private final Supplier<Supplier<GuiFactory<T>>> guiFactory;
-    private final ScreenHandlerType<BuiltScreenHandler> screenHandlerType;
+    private final ResourceLocation identifier;
+    private final MenuType<BuiltScreenHandler> screenHandlerType;
 
     @Environment(EnvType.CLIENT)
-    private GuiType(Identifier identifier, Supplier<Supplier<GuiFactory<T>>> factorySupplierMeme) {
+    private GuiType(ResourceLocation identifier, GuiFactory<T> factory) {
         this.identifier = identifier;
-        this.guiFactory = factorySupplierMeme;
-        this.screenHandlerType = ScreenHandlerRegistry.registerExtended(identifier, getScreenHandlerFactory());
-        RebornCore.clientOnly(() -> () -> ScreenRegistry.register(screenHandlerType, getGuiFactory()));
+        this.screenHandlerType = Registry.register(Registry.MENU, identifier, new ExtendedScreenHandlerType<>(getScreenHandlerFactory()));
+
+        TYPES.put(identifier, this);
+    }
+
+    public ResourceLocation getResourceLocation() {
+        return identifier;
+    }
+
+    public MenuType<BuiltScreenHandler>  getScreenHandlerType() {
+        return screenHandlerType;
     }
 
     private ScreenHandlerRegistry.ExtendedClientHandlerFactory<BuiltScreenHandler> getScreenHandlerFactory() {
         return (syncId, playerInventory, packetByteBuf) -> {
-            final BlockEntity blockEntity = playerInventory.player.world.getBlockEntity(packetByteBuf.readBlockPos());
+            final BlockEntity blockEntity = playerInventory.player.level.getBlockEntity(packetByteBuf.readBlockPos());
             assert blockEntity != null;
             BuiltScreenHandler screenHandler = ((BuiltScreenHandlerProvider) blockEntity).createScreenHandler(syncId, playerInventory.player);
 
@@ -73,52 +85,30 @@ public final class GuiType<T extends BlockEntity> implements IMachineGuiHandler 
         };
     }
 
-    @Environment(EnvType.CLIENT)
-    private GuiFactory<T> getGuiFactory() {
-        return guiFactory.get().get();
-    }
-
     @Override
-    public void open(PlayerEntity player, BlockPos pos, World world) {
-        if (!world.isClient) {
+    public void open(Player player, BlockPos pos, Level world) {
+        if (!world.isClientSide) {
             //This is awful
-            player.openHandledScreen(new ExtendedScreenHandlerFactory() {
+            player.openMenu(new ExtendedScreenHandlerFactory() {
                 @Override
-                public void writeScreenOpeningData(ServerPlayerEntity serverPlayerEntity, PacketByteBuf packetByteBuf) {
+                public void writeScreenOpeningData(ServerPlayer serverPlayerEntity, FriendlyByteBuf packetByteBuf) {
                     packetByteBuf.writeBlockPos(pos);
                 }
 
                 @Override
-                public Text getDisplayName() {
-                    return new LiteralText("What is this for?");
+                public Component getDisplayName() {
+                    return new TextComponent("What is this for?");
                 }
 
                 @Override
-                public ScreenHandler createMenu(int syncId, PlayerInventory inv, PlayerEntity player) {
-                    final BlockEntity blockEntity = player.world.getBlockEntity(pos);
+                public AbstractContainerMenu createMenu(int syncId, Inventory inv, Player player) {
+                    final BlockEntity blockEntity = player.level.getBlockEntity(pos);
                     assert blockEntity != null;
                     BuiltScreenHandler screenHandler = ((BuiltScreenHandlerProvider) blockEntity).createScreenHandler(syncId, player);
                     screenHandler.setType(screenHandlerType);
                     return screenHandler;
                 }
             });
-        }
-    }
-
-    public Identifier getIdentifier() {
-        return identifier;
-    }
-
-    @Environment(EnvType.CLIENT)
-    public interface GuiFactory<T extends BlockEntity> extends ScreenRegistry.Factory<BuiltScreenHandler, HandledScreen<BuiltScreenHandler>> {
-        HandledScreen<?> create(int syncId, PlayerEntity playerEntity, T blockEntity);
-
-        @Override
-        default HandledScreen create(BuiltScreenHandler builtScreenHandler, PlayerInventory playerInventory, Text text) {
-            PlayerEntity playerEntity = playerInventory.player;
-            //noinspection unchecked
-            T blockEntity = (T) builtScreenHandler.getBlockEntity();
-            return create(builtScreenHandler.syncId, playerEntity, blockEntity);
         }
     }
 }

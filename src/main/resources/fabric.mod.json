@@ -20,14 +20,17 @@
   "entrypoints": {
     "main": [
       "charginggadgets.ChargingGadgets"
+    ],
+    "client": [
+      "charginggadgets.client.ChargingGadgetsClient"
     ]
   },
   "depends": {
-    "fabricloader": ">=0.11.3",
+    "fabricloader": ">=0.14",
     "fabric": "*",
-    "minecraft": "1.18.x",
+    "minecraft": ">=1.18.2",
     "java": ">=17",
     "reborncore": "*",
-    "team_reborn_energy": ">=0.1.2"
+    "team_reborn_energy": ">=2.2.0"
   }
 }

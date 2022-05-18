@@ -3,118 +3,118 @@ package charginggadgets.blocks;
 import charginggadgets.blockentity.ChargingStationBlockEntity;
 import charginggadgets.client.GuiType;
 import charginggadgets.init.CGContent;
-import net.minecraft.block.Block;
-import net.minecraft.block.BlockRenderType;
-import net.minecraft.block.BlockState;
-import net.minecraft.block.entity.BlockEntity;
-import net.minecraft.entity.LivingEntity;
-import net.minecraft.item.ItemPlacementContext;
-import net.minecraft.item.ItemStack;
-import net.minecraft.loot.context.LootContext;
-import net.minecraft.loot.context.LootContextParameters;
-import net.minecraft.nbt.NbtCompound;
-import net.minecraft.state.StateManager;
-import net.minecraft.state.property.DirectionProperty;
-import net.minecraft.state.property.Properties;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Direction;
-import net.minecraft.world.World;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 import java.util.Optional;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.context.BlockPlaceContext;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.RenderShape;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.state.StateDefinition;
+import net.minecraft.world.level.block.state.properties.BlockStateProperties;
+import net.minecraft.world.level.block.state.properties.DirectionProperty;
+import net.minecraft.world.level.storage.loot.LootContext;
+import net.minecraft.world.level.storage.loot.parameters.LootContextParams;
 
 public class ChargingStationBlock extends GenericMachineBlock {
-    public static final DirectionProperty FACING = Properties.HORIZONTAL_FACING;
+    public static final DirectionProperty FACING = BlockStateProperties.HORIZONTAL_FACING;
 
     public ChargingStationBlock(BlockPos pos, BlockState state) {
         super(GuiType.CHARGING_STATION, ChargingStationBlockEntity::new);
 
-        setDefaultState(getStateManager().getDefaultState().with(FACING, Direction.NORTH));
+        registerDefaultState(getStateDefinition().any().setValue(FACING, Direction.NORTH));
     }
 
     @Override
-    protected void appendProperties(StateManager.Builder<Block, BlockState> builder) {
-        super.appendProperties(builder);
+    protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
+        super.createBlockStateDefinition(builder);
         builder.add(FACING);
     }
 
     @Nullable
     @Override
-    public BlockState getPlacementState(ItemPlacementContext context) {
-        return getDefaultState().with(FACING, context.getPlayerFacing().getOpposite());
+    public BlockState getStateForPlacement(BlockPlaceContext context) {
+        return defaultBlockState().setValue(FACING, context.getHorizontalDirection().getOpposite());
     }
 
     @Override
-    public BlockEntity createBlockEntity(BlockPos pos, BlockState state) {
+    public BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
         return new ChargingStationBlockEntity(pos, state);
     }
 
     @Override
-    public BlockRenderType getRenderType() {
-        return BlockRenderType.MODEL;
+    public RenderShape getRenderType() {
+        return RenderShape.MODEL;
     }
 
     @Override
-    public void onPlaced(World worldIn, BlockPos pos, BlockState state, LivingEntity placer, ItemStack stack) {
-        if (stack.hasNbt() && stack.getNbt().contains("blockEntity_data")) {
+    public void setPlacedBy(Level worldIn, BlockPos pos, BlockState state, LivingEntity placer, ItemStack stack) {
+        if (stack.hasTag() && stack.getTag().contains("blockEntity_data")) {
             BlockEntity blockEntity = worldIn.getBlockEntity(pos);
             if (blockEntity instanceof ChargingStationBlockEntity) {
-                NbtCompound nbt = stack.getNbt().getCompound("blockEntity_data");
-                long energy = stack.getNbt().getLong("energy");
+                CompoundTag nbt = stack.getTag().getCompound("blockEntity_data");
+                long energy = stack.getTag().getLong("energy");
                 ((ChargingStationBlockEntity) blockEntity).setEnergy(energy);
                 this.injectLocationData(nbt, pos);
-                blockEntity.readNbt(nbt);
-                blockEntity.markDirty();
+                blockEntity.load(nbt);
+                blockEntity.setChanged();
             }
         }
     }
 
     @Override
     @SuppressWarnings("deprecated")
-    public List<ItemStack> getDroppedStacks(BlockState state, LootContext.Builder builder) {
-        BlockEntity blockEntity = builder.get(LootContextParameters.BLOCK_ENTITY);
+    public List<ItemStack> getDrops(BlockState state, LootContext.Builder builder) {
+        BlockEntity blockEntity = builder.getParameter(LootContextParams.BLOCK_ENTITY);
 
-        List<ItemStack> drops = super.getDroppedStacks(state, builder);
+        List<ItemStack> drops = super.getDrops(state, builder);
         if (blockEntity instanceof ChargingStationBlockEntity chargingStationBlockEntity) {
             drops.stream()
                     .filter(e -> e.getItem() == CGContent.Machine.CHARGING_STATION.asItem())
                     .findFirst()
-                    .ifPresent(e -> e.getOrCreateNbt().putLong("energy", chargingStationBlockEntity.getEnergy()));
+                    .ifPresent(e -> e.getOrCreateTag().putLong("energy", chargingStationBlockEntity.getEnergy()));
         }
 
         return drops;
     }
 
     @Override
-    public Optional<ItemStack> getDropWithContents(World world, BlockPos pos, ItemStack stack) {
+    public Optional<ItemStack> getDropWithContents(Level world, BlockPos pos, ItemStack stack) {
         BlockEntity blockEntity = world.getBlockEntity(pos);
 
         if (blockEntity == null) {
             return Optional.empty();
         } else {
             ItemStack newStack = stack.copy();
-            NbtCompound blockEntityData = blockEntity.createNbt();
+            CompoundTag blockEntityData = blockEntity.saveWithoutMetadata();
             this.stripLocationData(blockEntityData);
-            if (!newStack.hasNbt()) {
-                newStack.setNbt(new NbtCompound());
+            if (!newStack.hasTag()) {
+                newStack.setTag(new CompoundTag());
             }
 
-            newStack.getNbt().put("blockEntity_data", blockEntityData);
+            newStack.getTag().put("blockEntity_data", blockEntityData);
             if (blockEntity instanceof ChargingStationBlockEntity) {
-                newStack.getNbt().putDouble("energy", ((ChargingStationBlockEntity) blockEntity).getEnergy());
+                newStack.getTag().putDouble("energy", ((ChargingStationBlockEntity) blockEntity).getEnergy());
             }
             return Optional.of(newStack);
         }
     }
 
-    private void injectLocationData(NbtCompound compound, BlockPos pos) {
+    private void injectLocationData(CompoundTag compound, BlockPos pos) {
         compound.putInt("x", pos.getX());
         compound.putInt("y", pos.getY());
         compound.putInt("z", pos.getZ());
     }
 
-    private void stripLocationData(NbtCompound compound) {
+    private void stripLocationData(CompoundTag compound) {
         compound.remove("x");
         compound.remove("y");
         compound.remove("z");

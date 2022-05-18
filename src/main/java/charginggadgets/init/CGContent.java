@@ -4,15 +4,14 @@ import charginggadgets.blockentity.ChargingStationBlockEntity;
 import charginggadgets.blocks.GenericMachineBlock;
 import charginggadgets.client.GuiType;
 import charginggadgets.utils.InitUtils;
-import net.minecraft.block.Block;
-import net.minecraft.item.Item;
-import net.minecraft.item.ItemConvertible;
-import net.minecraft.item.ItemStack;
-
 import java.util.Locale;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.ItemLike;
+import net.minecraft.world.level.block.Block;
 
 public class CGContent {
-    public enum Machine implements ItemConvertible {
+    public enum Machine implements ItemLike {
         CHARGING_STATION(new GenericMachineBlock(GuiType.CHARGING_STATION, ChargingStationBlockEntity::new));
 
         public final String name;

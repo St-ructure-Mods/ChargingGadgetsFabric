@@ -16,23 +16,25 @@ repositories {
 	// Loom adds the essential maven repositories to download Minecraft and libraries from automatically.
 	// See https://docs.gradle.org/current/userguide/declaring_repositories.html
 	// for more information about repositories.
+	maven {
+		url "https://cursemaven.com"
+		content {
+			includeGroup "curse.maven"
+		}
+	}
 }
 
 dependencies {
 	// To change the versions see the gradle.properties file
 	minecraft "com.mojang:minecraft:${project.minecraft_version}"
-	mappings "net.fabricmc:yarn:${project.yarn_mappings}:v2"
+	mappings loom.officialMojangMappings()
 	modImplementation "net.fabricmc:fabric-loader:${project.loader_version}"
 
 	// Fabric API. This is technically optional, but you probably want it anyway.
 	modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
 
 	// Reborn Core
-	def rcVersion = 'RebornCore:RebornCore-1.18:+'
-	modApi (rcVersion) {
-		exclude group: "net.fabricmc.fabric-api"
-	}
-	include rcVersion
+	include modImplementation("curse.maven:RebornCore-237903:3761010")
 
 	include modImplementation("teamreborn:energy:${project.energy_version}")
 }

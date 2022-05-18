@@ -5,9 +5,9 @@ import charginggadgets.init.CGContent;
 import charginggadgets.events.ModRegistry;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.client.itemgroup.FabricItemGroupBuilder;
-import net.minecraft.item.ItemGroup;
-import net.minecraft.item.ItemStack;
-import net.minecraft.util.Identifier;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.item.CreativeModeTab;
+import net.minecraft.world.item.ItemStack;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import reborncore.common.config.Configuration;
@@ -17,8 +17,8 @@ public class ChargingGadgets implements ModInitializer {
     public static final Logger LOGGER = LogManager.getLogger(MOD_ID);
     public static ChargingGadgets INSTANCE;
 
-    public static ItemGroup ITEMGROUP = FabricItemGroupBuilder.build(
-            new Identifier(MOD_ID, "item_group"),
+    public static CreativeModeTab ITEMGROUP = FabricItemGroupBuilder.build(
+            new ResourceLocation(MOD_ID, "item_group"),
             () -> new ItemStack(CGContent.Machine.CHARGING_STATION)
     );
 
