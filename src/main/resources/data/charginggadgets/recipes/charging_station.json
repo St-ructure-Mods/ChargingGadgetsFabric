@@ -1,0 +1,25 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "iri",
+    "drd",
+    "ili"
+  ],
+  "key": {
+    "i": {
+      "tag": "c:iron_ingots"
+    },
+    "r": {
+      "tag": "c:redstone_dusts"
+    },
+    "d": {
+      "tag": "c:lapis"
+    },
+    "l": {
+      "item": "minecraft:coal_block"
+    }
+  },
+  "result": {
+    "item": "charginggadgets:charging_station"
+  }
+}
