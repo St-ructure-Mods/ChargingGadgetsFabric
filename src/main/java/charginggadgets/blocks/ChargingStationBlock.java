@@ -1,7 +1,6 @@
 package charginggadgets.blocks;
 
 import charginggadgets.blockentity.ChargingStationBlockEntity;
-import charginggadgets.client.GuiType;
 import charginggadgets.init.CGContent;
 import org.jetbrains.annotations.Nullable;
 

@@ -13,15 +13,13 @@ import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import org.apache.commons.lang3.Validate;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import java.util.*;
 import java.util.function.BiFunction;
 import java.util.function.Supplier;
 
 public class CGBlockEntities {
 
-    private static final List<BlockEntityType<?>> TYPES = new ArrayList<>();
+    private static final Map<BlockEntityType<?>, ResourceLocation> TYPES = new HashMap<>();
 
     public static final BlockEntityType<ChargingStationBlockEntity> CHARGING_STATION = register(ChargingStationBlockEntity::new, "charging_station", CGContent.Machine.CHARGING_STATION);
 
@@ -36,8 +34,13 @@ public class CGBlockEntities {
 
     public static <T extends BlockEntity> BlockEntityType<T> register(String id, FabricBlockEntityTypeBuilder<T> builder) {
         BlockEntityType<T> blockEntityType = builder.build(null);
-        Registry.register(Registry.BLOCK_ENTITY_TYPE, new ResourceLocation(id), blockEntityType);
-        CGBlockEntities.TYPES.add(blockEntityType);
+        CGBlockEntities.TYPES.put(blockEntityType, new ResourceLocation(id));
         return blockEntityType;
+    }
+
+    public static void initBE() {
+        TYPES.forEach((blockEntityType, resourceLocation) -> {
+            Registry.register(Registry.BLOCK_ENTITY_TYPE, resourceLocation, blockEntityType);
+        });
     }
 }

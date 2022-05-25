@@ -2,6 +2,7 @@ package charginggadgets.client;
 
 
 import charginggadgets.blockentity.ChargingStationBlockEntity;
+import charginggadgets.blocks.GuiType;
 import charginggadgets.client.gui.GuiChargeStation;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;

@@ -2,7 +2,7 @@ package charginggadgets.init;
 
 import charginggadgets.blockentity.ChargingStationBlockEntity;
 import charginggadgets.blocks.GenericMachineBlock;
-import charginggadgets.client.GuiType;
+import charginggadgets.blocks.GuiType;
 import charginggadgets.utils.InitUtils;
 import java.util.Locale;
 import net.minecraft.world.item.Item;

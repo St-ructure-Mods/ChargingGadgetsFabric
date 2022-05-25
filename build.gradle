@@ -22,6 +22,11 @@ repositories {
 			includeGroup "curse.maven"
 		}
 	}
+	maven { url 'https://jitpack.io' }
+	maven {
+		name = 'Ladysnake Mods'
+		url = 'https://ladysnake.jfrog.io/artifactory/mods'
+	}
 }
 
 dependencies {
@@ -37,6 +42,14 @@ dependencies {
 	include modImplementation("curse.maven:RebornCore-237903:3761010")
 
 	include modImplementation("teamreborn:energy:${project.energy_version}")
+
+	modImplementation("curse.maven:Building-Gadgets-536984:3683202")
+	modRuntimeOnly("curse.maven:Cloth-Config-348521:3761416")
+	modRuntimeOnly('com.github.Chocohead:Fabric-ASM:39abe596bc')
+	modRuntimeOnly("io.github.onyxstudios.Cardinal-Components-API:cardinal-components-base:4.0.0")
+	modRuntimeOnly("io.github.onyxstudios.Cardinal-Components-API:cardinal-components-item:4.0.0")
+	modRuntimeOnly("io.github.onyxstudios.Cardinal-Components-API:cardinal-components-world:4.0.0")
+	modRuntimeOnly("io.github.onyxstudios.Cardinal-Components-API:cardinal-components-level:4.0.0")
 }
 
 processResources {

@@ -1,6 +1,7 @@
 package charginggadgets;
 
 import charginggadgets.config.CGConfig;
+import charginggadgets.init.CGBlockEntities;
 import charginggadgets.init.CGContent;
 import charginggadgets.events.ModRegistry;
 import net.fabricmc.api.ModInitializer;
@@ -28,7 +29,7 @@ public class ChargingGadgets implements ModInitializer {
         new Configuration(CGConfig.class, "charging_gadgets");
 
         ModRegistry.setup();
-
+        CGBlockEntities.initBE();
 
     }
 }
