@@ -11,6 +11,6 @@ public class CGConfig {
     public static int chargingStationMaxInput = 10_000;
 
     @Config(config = "machines", category = "charging_station", key = "ChargingStationMaxEnergy", comment = "Charging Station Max Energy (Value in EU)")
-    public static int chargingStationMaxEnergy = 100_000_000;
+    public static int chargingStationMaxEnergy = 10_000_000;
 
 }
